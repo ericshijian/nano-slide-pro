@@ -16,7 +16,7 @@ export const translations = {
   landing: {
     heroTitle: { 
       en: 'Transform Documents into Professional Slides in Seconds', 
-      cn: '几秒钟内将文档转化为专业演示文稿' 
+      cn: '将已有文档转化为专业演示文稿' 
     },
     heroSubtitle: { 
       en: 'AI-powered presentation generator with parallel image generation, video integration, and real-time analysis.', 
