@@ -97,35 +97,88 @@ export function useDocumentAnalysis() {
 }
 
 async function readFileContent(file: File): Promise<string> {
+  // For text-based files, read as text directly
+  if (file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target?.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  }
+  
+  // For PDF files, use pdfjs-dist to extract text
+  if (file.type === 'application/pdf') {
+    return extractPdfText(file);
+  }
+  
+  // For DOCX, provide helpful message (would need mammoth.js or similar)
+  if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    return `[DOCX Document: ${file.name}]\n\nDOCX parsing is not yet supported. Please convert to PDF or use markdown (.md) / text (.txt) files for best results.`;
+  }
+  
+  // Fallback: try to read as text
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      
-      // For text-based files, return content directly
-      if (file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
-        resolve(content);
-        return;
-      }
-      
-      // For PDF and DOCX, we'll send the raw text content
-      // In a production app, you'd want server-side parsing
-      // For now, we'll handle it as text or provide sample content
-      if (file.type === 'application/pdf') {
-        resolve(`[PDF Document: ${file.name}]\n\nThis is a placeholder for PDF content. In production, the server would parse the PDF.\n\nPlease use markdown (.md) or text (.txt) files for best results.`);
-        return;
-      }
-      
-      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        resolve(`[DOCX Document: ${file.name}]\n\nThis is a placeholder for DOCX content. In production, the server would parse the DOCX.\n\nPlease use markdown (.md) or text (.txt) files for best results.`);
-        return;
-      }
-      
-      resolve(content);
-    };
-    
+    reader.onload = (event) => resolve(event.target?.result as string);
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });
+}
+
+async function extractPdfText(file: File): Promise<string> {
+  try {
+    // Dynamically import pdfjs-dist
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Set up the worker - use a CDN-hosted worker for compatibility
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`;
+    
+    // Read file as ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    
+    console.log(`PDF loaded: ${pdf.numPages} pages`);
+    
+    const textParts: string[] = [];
+    
+    // Extract text from each page (limit to 50 pages for performance)
+    const maxPages = Math.min(pdf.numPages, 50);
+    
+    for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Combine text items into readable content
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      if (pageText) {
+        textParts.push(`--- Page ${pageNum} ---\n${pageText}`);
+      }
+    }
+    
+    if (pdf.numPages > 50) {
+      textParts.push(`\n[Note: Document has ${pdf.numPages} pages. Only first 50 pages were processed.]`);
+    }
+    
+    const fullText = textParts.join('\n\n');
+    
+    if (!fullText.trim()) {
+      return `[PDF Document: ${file.name}]\n\nThis PDF appears to contain no extractable text (may be scanned/image-based). Please use a text-based document for best results.`;
+    }
+    
+    console.log(`Extracted ${fullText.length} characters from PDF`);
+    return fullText;
+    
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    return `[PDF Document: ${file.name}]\n\nFailed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}. Please try a different document format.`;
+  }
 }
