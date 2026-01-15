@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGeneration } from '@/contexts/GenerationContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -19,47 +20,44 @@ import {
   Eye
 } from 'lucide-react';
 
-// Mock slides data
-const mockSlides = [
+// Fallback mock slides for when no generation result exists
+const fallbackSlides = [
   { 
-    id: 1, 
-    title: { en: 'AI Revolution 2024', cn: 'AI革命 2024' },
-    content: { en: 'The Future of Technology', cn: '技术的未来' },
-    hasVideo: false 
+    id: 'mock-1', 
+    title: 'AI Revolution 2024',
+    content: ['The Future of Technology', 'Transforming Industries', 'New Opportunities'],
+    imagePrompt: '',
+    notes: 'Introduction slide',
   },
   { 
-    id: 2, 
-    title: { en: 'Key Insights', cn: '核心洞察' },
-    content: { en: 'Data-driven decision making', cn: '数据驱动决策' },
-    hasVideo: false 
-  },
-  { 
-    id: 3, 
-    title: { en: 'Video Showcase', cn: '视频展示' },
-    content: { en: 'AI Generated Content', cn: 'AI生成内容' },
-    hasVideo: true 
-  },
-  { 
-    id: 4, 
-    title: { en: 'Market Analysis', cn: '市场分析' },
-    content: { en: 'Growth projections and trends', cn: '增长预测与趋势' },
-    hasVideo: false 
-  },
-  { 
-    id: 5, 
-    title: { en: 'Conclusion', cn: '结论' },
-    content: { en: 'Next steps and recommendations', cn: '下一步与建议' },
-    hasVideo: false 
+    id: 'mock-2', 
+    title: 'Key Insights',
+    content: ['Data-driven decision making', 'Automation at scale', 'Enhanced productivity'],
+    imagePrompt: '',
+    notes: 'Main insights',
   },
 ];
 
 export default function Editor() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { result } = useGeneration();
   const [selectedSlide, setSelectedSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const currentSlide = mockSlides[selectedSlide];
+  // Use real AI results if available, otherwise use fallback
+  const slides = useMemo(() => {
+    if (result?.slides && result.slides.length > 0) {
+      return result.slides;
+    }
+    return fallbackSlides;
+  }, [result]);
+
+  const presentationTitle = result?.title || (language === 'en' ? 'AI Revolution 2024' : 'AI革命 2024');
+  const currentSlide = slides[selectedSlide];
+
+  // Determine if slide has video (for demo purposes, mark one slide as video)
+  const hasVideo = selectedSlide === Math.floor(slides.length / 2);
 
   return (
     <Layout>
@@ -79,8 +77,8 @@ export default function Editor() {
                   {t('create.back')}
                 </Button>
                 <div className="h-6 w-px bg-border" />
-                <span className="font-medium">
-                  {language === 'en' ? 'AI Revolution 2024' : 'AI革命 2024'}
+                <span className="font-medium truncate max-w-xs">
+                  {presentationTitle}
                 </span>
               </div>
 
@@ -126,7 +124,7 @@ export default function Editor() {
             </div>
 
             <div className="space-y-3">
-              {mockSlides.map((slide, index) => (
+              {slides.map((slide, index) => (
                 <button
                   key={slide.id}
                   onClick={() => setSelectedSlide(index)}
@@ -141,7 +139,7 @@ export default function Editor() {
                     <div className="h-full flex flex-col">
                       <div className="w-full h-1.5 bg-primary/30 rounded mb-1" />
                       <div className="w-2/3 h-1 bg-muted-foreground/20 rounded mb-2" />
-                      {slide.hasVideo ? (
+                      {index === Math.floor(slides.length / 2) ? (
                         <div className="flex-1 bg-accent/10 rounded flex items-center justify-center">
                           <Play className="w-4 h-4 text-accent" />
                         </div>
@@ -183,13 +181,20 @@ export default function Editor() {
                 {/* Slide content */}
                 <div className="absolute inset-0 p-12 flex flex-col">
                   <h2 className="text-4xl font-bold mb-4 text-gradient">
-                    {currentSlide.title[language]}
+                    {currentSlide.title}
                   </h2>
-                  <p className="text-xl text-muted-foreground mb-8">
-                    {currentSlide.content[language]}
-                  </p>
                   
-                  {currentSlide.hasVideo ? (
+                  {/* Content bullets */}
+                  <ul className="text-lg text-muted-foreground mb-8 space-y-2">
+                    {currentSlide.content.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="w-2 h-2 rounded-full bg-primary mt-2.5 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  {hasVideo ? (
                     <div className="flex-1 bg-muted/30 rounded-xl flex items-center justify-center relative overflow-hidden">
                       {/* Video placeholder */}
                       <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-primary/10" />
@@ -212,7 +217,11 @@ export default function Editor() {
                     </div>
                   ) : (
                     <div className="flex-1 grid grid-cols-2 gap-6">
-                      <div className="bg-muted/30 rounded-xl" />
+                      <div className="bg-muted/30 rounded-xl flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground text-center px-4">
+                          {currentSlide.imagePrompt ? 'AI Image' : 'Image Placeholder'}
+                        </span>
+                      </div>
                       <div className="bg-muted/30 rounded-xl" />
                     </div>
                   )}
@@ -220,10 +229,22 @@ export default function Editor() {
 
                 {/* Slide number indicator */}
                 <div className="absolute bottom-4 right-4 px-3 py-1 rounded-full bg-background/50 text-xs text-muted-foreground">
-                  {selectedSlide + 1} / {mockSlides.length}
+                  {selectedSlide + 1} / {slides.length}
                 </div>
               </div>
             </div>
+
+            {/* Speaker notes */}
+            {currentSlide.notes && (
+              <div className="border-t border-border/50 bg-surface-glass/20 p-4">
+                <div className="max-w-4xl mx-auto">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Notes: </span>
+                    {currentSlide.notes}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Navigation controls */}
             <div className="border-t border-border/50 bg-surface-glass/30 p-4">
@@ -238,7 +259,7 @@ export default function Editor() {
                 </Button>
                 
                 <div className="flex gap-2">
-                  {mockSlides.map((_, i) => (
+                  {slides.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setSelectedSlide(i)}
@@ -254,8 +275,8 @@ export default function Editor() {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => setSelectedSlide(Math.min(mockSlides.length - 1, selectedSlide + 1))}
-                  disabled={selectedSlide === mockSlides.length - 1}
+                  onClick={() => setSelectedSlide(Math.min(slides.length - 1, selectedSlide + 1))}
+                  disabled={selectedSlide === slides.length - 1}
                 >
                   <ChevronRight className="w-5 h-5" />
                 </Button>
