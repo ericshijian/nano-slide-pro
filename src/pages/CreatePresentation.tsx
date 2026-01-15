@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGeneration } from '@/contexts/GenerationContext';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -25,6 +26,7 @@ const styleOptions = [
 
 export default function CreatePresentation() {
   const { t } = useLanguage();
+  const { setConfig } = useGeneration();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
@@ -33,6 +35,7 @@ export default function CreatePresentation() {
   const [slideCount, setSlideCount] = useState([0]); // 0 = auto
 
   const slideCountLabels = [t('create.slideCountAuto'), '5', '10', '15'];
+  const slideCountValues = [0, 5, 10, 15];
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -50,6 +53,13 @@ export default function CreatePresentation() {
   };
 
   const handleGenerate = () => {
+    // Store config in context for the generation page
+    setConfig({
+      file,
+      style: selectedStyle,
+      includeVideo,
+      slideCount: slideCountValues[slideCount[0]],
+    });
     navigate('/generation');
   };
 
@@ -113,7 +123,7 @@ export default function CreatePresentation() {
               >
                 <input
                   type="file"
-                  accept=".pdf,.md,.docx"
+                  accept=".pdf,.md,.docx,.txt"
                   onChange={handleFileInput}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
