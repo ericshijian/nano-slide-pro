@@ -10,6 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import CreatePresentation from "./pages/CreatePresentation";
 import GenerationProcess from "./pages/GenerationProcess";
 import Editor from "./pages/Editor";
+import Pricing from "./pages/Pricing";
+import Docs from "./pages/Docs";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
               <Route path="/create" element={<CreatePresentation />} />
               <Route path="/generation" element={<GenerationProcess />} />
               <Route path="/editor" element={<Editor />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
