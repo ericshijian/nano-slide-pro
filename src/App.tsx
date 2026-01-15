@@ -7,6 +7,8 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { GenerationProvider } from "@/contexts/GenerationContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
+import Templates from "./pages/Templates";
+import Trash from "./pages/Trash";
 import CreatePresentation from "./pages/CreatePresentation";
 import GenerationProcess from "./pages/GenerationProcess";
 import Editor from "./pages/Editor";
@@ -28,6 +30,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/trash" element={<Trash />} />
               <Route path="/create" element={<CreatePresentation />} />
               <Route path="/generation" element={<GenerationProcess />} />
               <Route path="/editor" element={<Editor />} />
