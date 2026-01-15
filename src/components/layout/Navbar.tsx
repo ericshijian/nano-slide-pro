@@ -13,9 +13,9 @@ export function Navbar() {
   const isLanding = location.pathname === '/';
 
   const navLinks = [
-    { href: '/', label: t('nav.features') },
-    { href: '/', label: t('nav.pricing') },
-    { href: '/', label: t('nav.docs') },
+    { href: '/#features', label: t('nav.features') },
+    { href: '/pricing', label: t('nav.pricing') },
+    { href: '/docs', label: t('nav.docs') },
   ];
 
   return (
