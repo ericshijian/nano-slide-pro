@@ -128,11 +128,11 @@ async function readFileContent(file: File): Promise<string> {
 
 async function extractPdfText(file: File): Promise<string> {
   try {
-    // Dynamically import pdfjs-dist
-    const pdfjsLib = await import('pdfjs-dist');
+    // Use dynamic import with error handling
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
     
-    // Set up the worker - use a CDN-hosted worker for compatibility
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs`;
+    // Set up the worker using CDN for compatibility
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
     
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
@@ -179,6 +179,7 @@ async function extractPdfText(file: File): Promise<string> {
     
   } catch (error) {
     console.error('PDF extraction error:', error);
-    return `[PDF Document: ${file.name}]\n\nFailed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}. Please try a different document format.`;
+    // Return file info as fallback - the AI can still try to process it
+    return `[PDF Document: ${file.name}]\n\nUnable to extract text from this PDF. The document may be scanned, encrypted, or in an unsupported format. Please try using a text (.txt) or markdown (.md) file instead.`;
   }
 }
