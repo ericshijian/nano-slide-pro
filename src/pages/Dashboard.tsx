@@ -93,14 +93,14 @@ export default function Dashboard() {
                 <FileText className="w-5 h-5" />
                 <span className="font-medium">{t('dashboard.allProjects')}</span>
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors">
+              <Link to="/templates" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors">
                 <Folder className="w-5 h-5" />
                 <span>{t('dashboard.templates')}</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors">
+              </Link>
+              <Link to="/trash" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors">
                 <Trash2 className="w-5 h-5" />
                 <span>{t('dashboard.trash')}</span>
-              </button>
+              </Link>
             </nav>
 
             {/* Quick stats */}
